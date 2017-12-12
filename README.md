@@ -2,7 +2,8 @@
 A tool to generate various ways to do a reverse shell
 
 # Usage example
-rsg 192.168.10.1 4444
+
+[![asciicast](https://asciinema.org/a/YyN0J1jZHYcMvXWKKWpSxI5mI.png)](https://asciinema.org/a/YyN0J1jZHYcMvXWKKWpSxI5mI)
 
 # Reverse Shell fonts
 
