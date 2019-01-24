@@ -15,8 +15,8 @@ def main():
 	shells = path.join(path.dirname(path.realpath(__file__)), 'shells.txt')
 	for shell in open(shells):
 		desc, cmd = shell.split('|', 1)
-		cmd.replace("[IPADDR]", ipaddr)
-		cmd.replace("[PORT]", port)
+		cmd = cmd.replace("[IPADDR]", ipaddr)
+		cmd = cmd.replace("[PORT]", port)
 		print GREEN(desc)
 		print cmd
 
