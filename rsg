@@ -25,7 +25,7 @@ def get_ip(interface):
         exit_code(-1)
     else:
         return res.group(0)
-    
+
 def main():
     if len(argv) < 3:
         usage()
@@ -45,12 +45,12 @@ def main():
             print(GREEN(desc))
             print(cmd)
 
-    c = input('Select your payload, press "l" to listen on that port or enter to exit: ')
+    c = input('Select your payload, press "l" to listen on port {} or enter to exit: '.format(port))
     if c == 'l':
         if int(port) < 1024:
-            system('sudo nc -n -v -l {} {}'.format(ipaddr, port))
+            system('sudo nc -n -v -l {} -p {}'.format(ipaddr, port))
         else:
-            system('nc -n -v -l {} {}'.format(ipaddr, port))
+            system('nc -n -v -l {} -p {}'.format(ipaddr, port))
 
 if __name__ == "__main__":
     main()
