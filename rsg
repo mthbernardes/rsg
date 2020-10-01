@@ -16,7 +16,7 @@ Examples:
     exit_code(-1)
 
 def verify_ip(ipaddr):
-    output = check_output(['ifconfig']).decode()
+    output = check_output(['ip', 'address']).decode()
     candidate_ips = [ip for ip in findall(r"(?:\d{1,3}\.){3}\d{1,3}",output) if '255' not in ip]
 
     return ipaddr in candidate_ips
