@@ -1,9 +1,10 @@
 # Reverse Shell Generator - rsg
+
 A tool to generate various ways to do a reverse shell
 
 # Usage example
 
-[![asciicast](https://asciinema.org/a/YyN0J1jZHYcMvXWKKWpSxI5mI.png)](https://asciinema.org/a/YyN0J1jZHYcMvXWKKWpSxI5mI)
+![](example.png)
 
 # Reverse Shell fonts
 
