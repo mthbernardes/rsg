@@ -4,6 +4,7 @@ from sys import argv, exit as exit_code
 from os import system, path
 from re import findall
 from subprocess import check_output
+import pyperclip
 
 def GREEN(text):
     return "\033[32m{}\033[0m".format(str(text))
@@ -36,13 +37,29 @@ def main():
         shell_type = argv[3].upper()
     else:
         shell_type = ''
+    number_of_shells = 0
     for shell in open(shells):
+        number_of_shells = number_of_shells + 1
         desc, cmd = shell.split('|', 1)
         cmd = cmd.replace("[IPADDR]", ipaddr)
         cmd = cmd.replace("[PORT]", port)
         if shell_type in desc:
             print(GREEN(desc))
             print(cmd)
+
+    c = input('Copy your payload by pressing the number or enter to exit: ')
+    try:
+        shell_number = int(c)
+
+        if shell_number < number_of_shells:
+            f = open(shells)
+            lines = f.readlines()
+            desc, cmd = lines[shell_number - 1].split('|', 1)
+            cmd = cmd.replace("[IPADDR]", ipaddr)
+            cmd = cmd.replace("[PORT]", port)
+            pyperclip.copy(cmd)
+    except ValueError:
+        print()
 
     c = input('Select your payload, press "l" to listen on port {} or enter to exit: '.format(port))
     if c == 'l':
