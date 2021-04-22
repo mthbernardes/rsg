@@ -47,17 +47,19 @@ def main():
             print(GREEN(desc))
             print(cmd)
 
-    c = input('Copy your payload by pressing the number or enter to exit: ')
+    c = input('Copy your payload by inputing the number or enter to continute: ')
     try:
         shell_number = int(c)
 
-        if shell_number < number_of_shells:
+        if shell_number <= number_of_shells:
             f = open(shells)
             lines = f.readlines()
             desc, cmd = lines[shell_number - 1].split('|', 1)
             cmd = cmd.replace("[IPADDR]", ipaddr)
             cmd = cmd.replace("[PORT]", port)
             pyperclip.copy(cmd)
+        else:
+            print ('No payload exist for this number.')
     except ValueError:
         print()
 
