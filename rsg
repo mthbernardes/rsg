@@ -1,9 +1,10 @@
 #!/usr/bin/env python3
 
 from sys import argv, exit as exit_code
-from os import system, path
+from os import system, path, readlink
 from re import findall
 from subprocess import check_output
+from shutil import which
 import signal
 
 
@@ -16,13 +17,27 @@ def RED(text):
 
 
 def usage():
-    program_name = argv[0]
+    # we check if our program is in the $PATH
+    program_name = "rsg"
+    absolute_program_path = path.join(path.dirname(path.realpath(__file__)), program_name)
 
-    print(f"""Usage: python3 {program_name} <ip address> <port> [shell type]
+    # if the path returned by the utility "which" is a symlink,
+    # we get the target
+    candidate_program_file = which(program_name)
+    if path.islink(candidate_program_file):
+        candidate_program_file = readlink(candidate_program_file)
+
+    # we check that the two paths match
+    if candidate_program_file != absolute_program_path:
+        # if our program is not in the $PATH,
+        # we change the usage message accordingly
+        program_name = f"python3 {argv[0]}"
+
+    print(f"""Usage: {program_name} <ip address> <port> [shell type]
 
 Examples:
-    python3 {program_name} 127.0.0.1 4444
-    python3 {program_name} 192.168.0.1 443 bash""")
+    {program_name} 127.0.0.1 4444
+    {program_name} 192.168.0.1 443 bash""")
     exit_code(-1)
 
 
