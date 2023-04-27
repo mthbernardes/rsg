@@ -10,6 +10,7 @@ fi
 
 if [ ! -f "$SRC" ]; then
     echo "Missing main program file ($SRC)."
+    exit
 fi
 
 if [ ! -L "$DST" ]; then
@@ -19,6 +20,7 @@ In order to proceed, please run as root the following command
     rm -f "$DST"
 then relaunch this installation script.
 EOF
+    exit
 fi
 
 ln -s "$(realpath ${SRC})" "$DST"
