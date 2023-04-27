@@ -140,7 +140,7 @@ def main():
         else:
             exit_code(0)
 
-    # this should be impossible
+    # if the listener key is correct we get the command and execute it
     if listener_key in commands.keys():
         command = commands[listener_key]
         system(command)
